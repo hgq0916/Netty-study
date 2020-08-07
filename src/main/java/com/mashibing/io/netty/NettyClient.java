@@ -3,6 +3,7 @@ package com.mashibing.io.netty;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -41,13 +42,18 @@ public class NettyClient {
       }
     }
 
-
-
   }
 
 }
 
 class ClientEventHandler extends ChannelInboundHandlerAdapter {
+
+  @Override
+  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    ByteBuf buf = Unpooled.copiedBuffer("hahaha".getBytes());
+    ctx.channel().writeAndFlush(buf);//writeAndFlush会在使用完后自动释放byteBuf
+    System.out.println("channelActive");
+  }
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {

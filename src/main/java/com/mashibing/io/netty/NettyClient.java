@@ -15,23 +15,33 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 public class NettyClient {
 
   public static void main(String[] args) throws InterruptedException {
-    EventLoopGroup group = new NioEventLoopGroup(1);
-    Bootstrap bootstrap = new Bootstrap();
-    ChannelFuture channelFuture = bootstrap.group(group)
-        .channel(NioSocketChannel.class)
-        .handler(new ChannelInitializer<NioSocketChannel>() {
-          @Override
-          protected void initChannel(NioSocketChannel ch) throws Exception {
-            ChannelPipeline pipeline = ch.pipeline();
-            pipeline.addLast(new ClientEventHandler());
-          }
-        })
-        .connect("localhost", 8888);
 
-    ChannelFuture sync = channelFuture.sync();
-    ByteBuf byteBuf = ByteBufAllocator.DEFAULT.heapBuffer().writeBytes("helloserver".getBytes());
-    ChannelFuture channelFuture1 = sync.channel().writeAndFlush(byteBuf);
-    channelFuture1.sync().channel().closeFuture().sync();
+    EventLoopGroup group = null;
+    try{
+      group = new NioEventLoopGroup(1);
+      Bootstrap bootstrap = new Bootstrap();
+      ChannelFuture channelFuture = bootstrap.group(group)
+          .channel(NioSocketChannel.class)
+          .handler(new ChannelInitializer<NioSocketChannel>() {
+            @Override
+            protected void initChannel(NioSocketChannel ch) throws Exception {
+              ChannelPipeline pipeline = ch.pipeline();
+              pipeline.addLast(new ClientEventHandler());
+            }
+          })
+          .connect("localhost", 8888);
+
+      ChannelFuture sync = channelFuture.sync();
+      ByteBuf byteBuf = ByteBufAllocator.DEFAULT.heapBuffer().writeBytes("helloserver".getBytes());
+      ChannelFuture channelFuture1 = sync.channel().writeAndFlush(byteBuf);
+      channelFuture1.sync().channel().closeFuture().sync();
+    }finally {
+      if(group != null){
+        group.shutdownGracefully();
+      }
+    }
+
+
 
   }
 

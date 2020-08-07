@@ -18,20 +18,34 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 public class NettyServer {
 
   public static void main(String[] args) throws InterruptedException {
-    //线程数默认为cpu的核心数
-    EventLoopGroup group = new NioEventLoopGroup(2);
-    ServerBootstrap bootstrap = new ServerBootstrap();
-    ChannelFuture channelFuture = bootstrap.group(group, group)
-        .childHandler(new ChannelInitializer<NioSocketChannel>() {
-          @Override
-          protected void initChannel(NioSocketChannel ch) throws Exception {
-            ChannelPipeline pipeline = ch.pipeline();
-            pipeline.addLast(new ClientReadHanler());
-          }
-        })
-        .channel(NioServerSocketChannel.class)
-        .bind("localhost", 8888);
-    channelFuture.sync().channel().closeFuture().sync();
+
+    EventLoopGroup bossGroup = null;
+    EventLoopGroup workerGroup = null;
+    try{
+      //线程数默认为cpu的核心数
+      bossGroup = new NioEventLoopGroup(1);
+      workerGroup = new NioEventLoopGroup(2);
+      ServerBootstrap bootstrap = new ServerBootstrap();
+      ChannelFuture channelFuture = bootstrap.group(bossGroup, workerGroup)
+          .childHandler(new ChannelInitializer<NioSocketChannel>() {
+            @Override
+            protected void initChannel(NioSocketChannel ch) throws Exception {
+              ChannelPipeline pipeline = ch.pipeline();
+              pipeline.addLast(new ClientReadHanler());
+            }
+          })
+          .channel(NioServerSocketChannel.class)
+          .bind("localhost", 8888);
+      channelFuture.sync().channel().closeFuture().sync();//closeFuture.sync在调用close后方法才返回
+    }finally {
+      if(bossGroup != null){
+        bossGroup.shutdownGracefully();
+      }
+      if(workerGroup != null){
+        workerGroup.shutdownGracefully();
+      }
+    }
+
   }
 
 }

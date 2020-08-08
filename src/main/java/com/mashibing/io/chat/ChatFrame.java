@@ -5,6 +5,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -12,6 +13,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.concurrent.GenericFutureListener;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.TextArea;
@@ -59,18 +61,21 @@ public class ChatFrame extends Frame {
         msgSender.send(text);
       }
     });
+    this.setVisible(true);
     try {
       msgSender.init();
     } catch (Exception e) {
       e.printStackTrace();
     }
-    this.setVisible(true);
   }
 
   public static void main(String[] args) {
     new ChatFrame();
   }
 
+  public void updateMsg(String str) {
+    ta.append(str+System.getProperty("line.separator"));
+  }
 }
 
 class MsgSender {
@@ -96,15 +101,18 @@ class MsgSender {
           }
         })
         .connect("localhost", 9090)
+        .addListener(new ChannelFutureListener() {
+          @Override
+          public void operationComplete(ChannelFuture future) throws Exception {
+            if(future.isSuccess()){
+              channel = future.channel();
+            }else {
+              System.out.println("connect server fail");
+            }
+          }
+        })
         .sync();
-    channel = channelFuture.channel();
-    new Thread(()->{
-      try {
-        channelFuture.channel().closeFuture().sync();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }).start();
+    channelFuture.channel().closeFuture().sync();
   }
 
   public void send(String str){
@@ -121,7 +129,7 @@ class MsgSender {
       byteBuf.getBytes(byteBuf.readerIndex(),data);
 
       String str = new String(data);
-      chatFrame.getTa().append(str+"\n");
+      chatFrame.updateMsg(str);
 
     }
   }

@@ -87,6 +87,12 @@ class ServerReadHanler extends ChannelInboundHandlerAdapter {
       /*ReferenceCountUtil.release(buf);
       System.out.println(buf.refCnt());*/
     }
+  }
 
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    System.out.println("client exit");
+    ChatServer.clients.remove(ctx.channel());
+    ctx.close();
   }
 }

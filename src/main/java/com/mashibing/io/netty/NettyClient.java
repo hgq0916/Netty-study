@@ -50,6 +50,11 @@ public class NettyClient {
 class ClientEventHandler extends ChannelInboundHandlerAdapter {
 
   @Override
+  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    System.out.println("channelInactive");
+  }
+
+  @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     ByteBuf buf = Unpooled.copiedBuffer(("hahaha"+new Random().nextInt(10)).getBytes());
     ctx.channel().writeAndFlush(buf);//writeAndFlush会在使用完后自动释放byteBuf

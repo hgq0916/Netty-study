@@ -57,6 +57,13 @@ public class NettyServer {
 
 class ClientReadHanler extends ChannelInboundHandlerAdapter {
 
+/*
+  @Override
+  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    //NettyServer.clients.remove(ctx.channel());
+  }
+*/
+
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     //将客户端加入channel组

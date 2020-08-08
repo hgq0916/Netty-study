@@ -77,10 +77,18 @@ class ServerReadHanler extends ChannelInboundHandlerAdapter {
         int len = buf.readableBytes();
         byte[] data = new byte[len];
         buf.getBytes(buf.readerIndex(),data);
-        System.out.println(new String(data));
-        //向所有的客户端转发消息
-        ChatServer.clients.writeAndFlush(buf);
-       // ctx.channel().writeAndFlush(buf);
+        String str = new String(data);
+        System.out.println(str);
+
+        if("~bye~".equals(str)){
+          System.out.println("客户端退出");
+          ChatServer.clients.remove(ctx.channel());
+          ctx.close();
+        }else {
+          //向所有的客户端转发消息
+          ChatServer.clients.writeAndFlush(buf);
+          // ctx.channel().writeAndFlush(buf);
+        }
       }
     }finally{
       //System.out.println(buf.refCnt());

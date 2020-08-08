@@ -45,6 +45,7 @@ public class ChatFrame extends Frame {
     this.addWindowListener(new WindowAdapter() {
       @Override
       public void windowClosing(WindowEvent e) {
+        msgSender.close();
         System.exit(0);
       }
     });
@@ -88,36 +89,51 @@ class MsgSender {
     this.chatFrame = chatFrame;
   }
 
-  public void init() throws Exception {
-    EventLoopGroup group = new NioEventLoopGroup(1);
-    Bootstrap bs = new Bootstrap();
-    ChannelFuture channelFuture = bs.group(group)
-        .channel(NioSocketChannel.class)
-        .handler(new ChannelInitializer<NioSocketChannel>() {
-          @Override
-          protected void initChannel(NioSocketChannel ch) throws Exception {
-            ChannelPipeline pipeline = ch.pipeline();
-            pipeline.addLast(new ClientMsgHandler());
-          }
-        })
-        .connect("localhost", 9090)
-        .addListener(new ChannelFutureListener() {
-          @Override
-          public void operationComplete(ChannelFuture future) throws Exception {
-            if(future.isSuccess()){
-              channel = future.channel();
-            }else {
-              System.out.println("connect server fail");
+  public void init() {
+    EventLoopGroup group = null;
+    try{
+      group = new NioEventLoopGroup(1);
+      Bootstrap bs = new Bootstrap();
+      ChannelFuture channelFuture = bs.group(group)
+          .channel(NioSocketChannel.class)
+          .handler(new ChannelInitializer<NioSocketChannel>() {
+            @Override
+            protected void initChannel(NioSocketChannel ch) throws Exception {
+              ChannelPipeline pipeline = ch.pipeline();
+              pipeline.addLast(new ClientMsgHandler());
             }
-          }
-        })
-        .sync();
-    channelFuture.channel().closeFuture().sync();
+          })
+          .connect("localhost", 9090)
+          .addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+              if(future.isSuccess()){
+                channel = future.channel();
+              }else {
+                System.out.println("connect server fail");
+              }
+            }
+          })
+          .sync();
+      channelFuture.channel().closeFuture().sync();
+    }catch (Exception e){
+      e.printStackTrace();
+    }finally {
+      if(group!=null){
+        group.shutdownGracefully();
+      }
+    }
+
   }
 
   public void send(String str){
     ByteBuf byteBuf = Unpooled.copiedBuffer(str.getBytes());
     channel.writeAndFlush(byteBuf);
+  }
+
+  public void close() {
+    send("~bye~");
+    channel.close();
   }
 
   class ClientMsgHandler extends ChannelInboundHandlerAdapter {

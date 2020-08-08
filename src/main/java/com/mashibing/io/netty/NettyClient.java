@@ -12,6 +12,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import java.util.Random;
 
 public class NettyClient {
 
@@ -33,9 +34,9 @@ public class NettyClient {
           .connect("localhost", 8888);
 
       ChannelFuture sync = channelFuture.sync();
-      ByteBuf byteBuf = ByteBufAllocator.DEFAULT.heapBuffer().writeBytes("helloserver".getBytes());
-      ChannelFuture channelFuture1 = sync.channel().writeAndFlush(byteBuf);
-      channelFuture1.sync().channel().closeFuture().sync();
+      /*ByteBuf byteBuf = ByteBufAllocator.DEFAULT.heapBuffer().writeBytes("helloserver".getBytes());
+      ChannelFuture channelFuture1 = sync.channel().writeAndFlush(byteBuf);*/
+      sync.channel().closeFuture().sync();
     }finally {
       if(group != null){
         group.shutdownGracefully();
@@ -50,7 +51,7 @@ class ClientEventHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
-    ByteBuf buf = Unpooled.copiedBuffer("hahaha".getBytes());
+    ByteBuf buf = Unpooled.copiedBuffer(("hahaha"+new Random().nextInt(10)).getBytes());
     ctx.channel().writeAndFlush(buf);//writeAndFlush会在使用完后自动释放byteBuf
     System.out.println("channelActive");
   }

@@ -9,12 +9,17 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.GlobalEventExecutor;
 
 public class NettyServer {
+
+  public static ChannelGroup clients = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
   public static void main(String[] args) throws InterruptedException {
 
@@ -53,6 +58,12 @@ public class NettyServer {
 class ClientReadHanler extends ChannelInboundHandlerAdapter {
 
   @Override
+  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    //将客户端加入channel组
+    NettyServer.clients.add(ctx.channel());
+  }
+
+  @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     ByteBuf buf = null;
     try{
@@ -62,7 +73,9 @@ class ClientReadHanler extends ChannelInboundHandlerAdapter {
         byte[] data = new byte[len];
         buf.getBytes(buf.readerIndex(),data);
         System.out.println(new String(data));
-        ctx.channel().writeAndFlush(buf);
+        //向所有的客户端转发消息
+        NettyServer.clients.writeAndFlush(buf);
+       // ctx.channel().writeAndFlush(buf);
       }
     }finally{
       System.out.println(buf.refCnt());

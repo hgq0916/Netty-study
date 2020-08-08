@@ -1,8 +1,7 @@
-package com.mashibing.io.netty;
+package com.mashibing.io.chat;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -14,10 +13,9 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
-public class NettyServer {
+public class ChatServer {
 
   public static ChannelGroup clients = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
@@ -35,11 +33,11 @@ public class NettyServer {
             @Override
             protected void initChannel(NioSocketChannel ch) throws Exception {
               ChannelPipeline pipeline = ch.pipeline();
-              pipeline.addLast(new ClientReadHanler());
+              pipeline.addLast(new ServerReadHanler());
             }
           })
           .channel(NioServerSocketChannel.class)
-          .bind("localhost", 8888);
+          .bind("localhost", 9090);
       channelFuture.sync().channel().closeFuture().sync();//closeFuture.sync在调用close后方法才返回
     }finally {
       if(bossGroup != null){
@@ -55,7 +53,7 @@ public class NettyServer {
 
 }
 
-class ClientReadHanler extends ChannelInboundHandlerAdapter {
+class ServerReadHanler extends ChannelInboundHandlerAdapter {
 
 /*
   @Override
@@ -67,7 +65,7 @@ class ClientReadHanler extends ChannelInboundHandlerAdapter {
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     //将客户端加入channel组
-    NettyServer.clients.add(ctx.channel());
+    ChatServer.clients.add(ctx.channel());
   }
 
   @Override
@@ -81,11 +79,11 @@ class ClientReadHanler extends ChannelInboundHandlerAdapter {
         buf.getBytes(buf.readerIndex(),data);
         System.out.println(new String(data));
         //向所有的客户端转发消息
-        NettyServer.clients.writeAndFlush(buf);
+        ChatServer.clients.writeAndFlush(buf);
        // ctx.channel().writeAndFlush(buf);
       }
     }finally{
-      System.out.println(buf.refCnt());
+      //System.out.println(buf.refCnt());
       /*ReferenceCountUtil.release(buf);
       System.out.println(buf.refCnt());*/
     }

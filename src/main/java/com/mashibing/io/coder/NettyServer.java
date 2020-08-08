@@ -78,15 +78,3 @@ class ClientReadHanler extends ChannelInboundHandlerAdapter {
   }
 }
 
-class TankMsgDecoder extends ByteToMessageDecoder {
-
-  @Override
-  protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-    if(in.readableBytes()>=8){
-      int x = in.readInt();
-      int y = in.readInt();
-      TankMsg tankMsg = new TankMsg(x,y);
-      out.add(tankMsg);
-    }
-  }
-}

@@ -72,11 +72,3 @@ class ClientEventHandler extends ChannelInboundHandlerAdapter {
   }
 }
 
-class TankMsgEncoder extends MessageToByteEncoder<TankMsg> {
-
-  @Override
-  protected void encode(ChannelHandlerContext ctx, TankMsg msg, ByteBuf out) throws Exception {
-    out.writeInt(msg.getX());
-    out.writeInt(msg.getY());
-  }
-}

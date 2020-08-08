@@ -60,15 +60,14 @@ class ClientReadHanler extends ChannelInboundHandlerAdapter {
       if(buf.readableBytes()>0){
         int len = buf.readableBytes();
         byte[] data = new byte[len];
-        buf.readBytes(data);
+        buf.getBytes(buf.readerIndex(),data);
         System.out.println(new String(data));
-        ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer().writeBytes(data);
-        ctx.channel().writeAndFlush(byteBuf);
+        ctx.channel().writeAndFlush(buf);
       }
     }finally{
       System.out.println(buf.refCnt());
-      ReferenceCountUtil.release(buf);
-      System.out.println(buf.refCnt());
+      /*ReferenceCountUtil.release(buf);
+      System.out.println(buf.refCnt());*/
     }
 
   }

@@ -2,6 +2,7 @@ package com.mashibing.io.chat;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -18,9 +19,9 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 public class ChatServer {
 
   public static ChannelGroup clients = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+  private Channel channel;
 
-  public static void main(String[] args) throws InterruptedException {
-
+  public void start(){
     EventLoopGroup bossGroup = null;
     EventLoopGroup workerGroup = null;
     try{
@@ -38,8 +39,12 @@ public class ChatServer {
           })
           .channel(NioServerSocketChannel.class)
           .bind("localhost", 9090);
-      channelFuture.sync().channel().closeFuture().sync();//closeFuture.sync在调用close后方法才返回
-    }finally {
+      channel = channelFuture.sync().channel();
+      ServerFrame.INSTANCE.updateServerMsg("server started");
+      channel.closeFuture().sync();//closeFuture.sync在调用close后方法才返回
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } finally {
       if(bossGroup != null){
         bossGroup.shutdownGracefully();
       }
@@ -48,7 +53,6 @@ public class ChatServer {
         workerGroup.shutdownGracefully();
       }
     }
-
   }
 
 }
@@ -65,6 +69,7 @@ class ServerReadHanler extends ChannelInboundHandlerAdapter {
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     //将客户端加入channel组
+    ServerFrame.INSTANCE.updateServerMsg("一个新的客户端连接上了");
     ChatServer.clients.add(ctx.channel());
   }
 
@@ -78,28 +83,24 @@ class ServerReadHanler extends ChannelInboundHandlerAdapter {
         byte[] data = new byte[len];
         buf.getBytes(buf.readerIndex(),data);
         String str = new String(data);
-        System.out.println(str);
+        ServerFrame.INSTANCE.updateClientMsg(str);
 
         if("~bye~".equals(str)){
-          System.out.println("客户端退出");
+          ServerFrame.INSTANCE.updateServerMsg("客户端退出");
           ChatServer.clients.remove(ctx.channel());
           ctx.close();
         }else {
           //向所有的客户端转发消息
           ChatServer.clients.writeAndFlush(buf);
-          // ctx.channel().writeAndFlush(buf);
         }
       }
     }finally{
-      //System.out.println(buf.refCnt());
-      /*ReferenceCountUtil.release(buf);
-      System.out.println(buf.refCnt());*/
     }
   }
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    System.out.println("client exit");
+    ServerFrame.INSTANCE.updateServerMsg("client exit");
     ChatServer.clients.remove(ctx.channel());
     ctx.close();
   }
